@@ -1,5 +1,7 @@
 # Testing Guide — Lekha Tally Agent
 
+> **Note:** this guide is for *validating* that the agent works end-to-end against a real Tally — not how end users will eventually use it. Once Lekha AI's website integrates the pairing + sync flow, real users only do step 1 (install) and step 2 (enable Tally's port); everything from step 3 onward happens inside the browser with one click.
+
 For: anyone with a Windows PC running Tally Prime.
 Goal: install the agent, point a browser at it, see real Tally data come back as JSON.
 
