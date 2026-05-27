@@ -1,0 +1,58 @@
+[package]
+name = "lekha_tally_installer"
+version = "0.1.0"
+edition = "2024"
+description = "Local agent that bridges the Lekha AI web app to Tally Prime on the user's PC."
+license = "Proprietary"
+authors = ["Lekha AI <ashish@scaleupcfo.in>"]
+
+[[bin]]
+# Rename the produced .exe to avoid Windows's "this looks like an installer"
+# UAC auto-elevation heuristic (which fires on any exe name containing
+# "install"/"setup"/"update"). The package stays `lekha_tally_installer`;
+# only the binary it produces is renamed.
+name = "lekha_tally"
+path = "src/main.rs"
+
+[dependencies]
+# --- Phase 1: Tally client ---
+# ureq is a tiny blocking HTTP client used by src/tally.rs to POST to Tally
+# on localhost:9000. Blocking is fine inside spawn_blocking; see tally.rs.
+ureq = "2"
+
+# --- Phase 2: HTTP server ---
+# tokio = async runtime. axum needs it. `full` features = batteries-included.
+tokio = { version = "1", features = ["full"] }
+# axum = the web framework. Owned by the tokio team, easy to read.
+axum = "0.7"
+# serde_json = builds JSON responses safely (no string concatenation).
+serde_json = "1"
+
+# --- Phase 4: HTTPS + CORS ---
+# axum-server adds TLS-serving to axum (axum on its own only does plain HTTP).
+axum-server = { version = "0.7", features = ["tls-rustls"] }
+# rustls = pure-Rust TLS library; we need it directly to install the crypto
+# provider at startup (required since rustls 0.23).
+rustls = "0.23"
+# rcgen = generates self-signed certs in pure Rust, no openssl needed.
+rcgen = "0.13"
+# tower-http gives us the CORS middleware (lock browser origins).
+tower-http = { version = "0.6", features = ["cors"] }
+
+# --- Phase 5: pairing token ---
+# uuid = generate a random v4 token (cryptographically-secure, 122 bits of
+# entropy, familiar format). One paired token per agent install.
+uuid = { version = "1", features = ["v4"] }
+
+# --- Phase 6: real XML parser + structured responses ---
+# quick-xml = streaming XML parser, handles Tally's quirks robustly.
+quick-xml = "0.36"
+# serde with derive lets us serialize Rust structs directly to JSON.
+serde = { version = "1", features = ["derive"] }
+
+# --- Phase 7: system tray ---
+# tao = the windowing/event-loop library Tauri uses. We need it for the
+# Win32 message pump that tray icons require.
+tao = "0.30"
+# tray-icon = cross-platform tray icon + native popup menu.
+tray-icon = "0.19"
