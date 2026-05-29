@@ -3,6 +3,7 @@
 //! The single `forward_xml()` function is the entire public API of the tally
 //! module. It forwards raw XML to Tally, sanitizes the response, and returns it.
 
+use std::io::Read;
 use std::net::{TcpStream, ToSocketAddrs};
 use std::time::Duration;
 
@@ -21,13 +22,20 @@ pub fn forward_xml(xml_body: &str, port: u16) -> Result<String, TallyError> {
     let agent = ureq::AgentBuilder::new()
         .timeout(Duration::from_secs(TIMEOUT_SECS))
         .build();
-    let raw = agent
+    // Read via into_reader() rather than into_string(): the latter caps bodies
+    // at 10 MB in ureq 2.x and errors past it, which 502s large voucher pulls
+    // (a month of one company can exceed 20 MB). into_reader() is unbounded.
+    let mut reader = agent
         .post(&url)
         .set("Content-Type", "text/xml")
         .send_string(xml_body)
         .map_err(|e| TallyError::HttpFailed(e.to_string()))?
-        .into_string()
+        .into_reader();
+    let mut bytes = Vec::new();
+    reader
+        .read_to_end(&mut bytes)
         .map_err(|e| TallyError::HttpFailed(e.to_string()))?;
+    let raw = String::from_utf8_lossy(&bytes).into_owned();
     Ok(sanitize_xml(&raw))
 }
 
