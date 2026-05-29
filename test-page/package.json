@@ -1,7 +1,7 @@
 {
   "name": "lekha-tally-test-page",
-  "version": "0.1.0",
-  "description": "Standalone test page for the Lekha Tally Agent. Deploy on Railway to validate the agent before integrating into Lekha AI.",
+  "version": "0.2.0",
+  "description": "Standalone test page for the Lekha AI Tally Connector. Deploy on Railway to validate the connector before integrating into Lekha AI.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

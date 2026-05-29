@@ -1,11 +1,11 @@
-; Lekha Tally Agent — Inno Setup installer script.
+; Lekha AI Tally Connector — Inno Setup installer script.
 ;
 ; What this produces:
 ;   installer_out\LekhaTallyAgentSetup.exe
 ; What it does when the user runs that .exe:
-;   - Installs lekha_tally.exe to %LOCALAPPDATA%\Programs\Lekha\TallyAgent
+;   - Installs lekha_tally.exe to %LOCALAPPDATA%\Programs\LekhaAI\TallyConnector
 ;     (per-user install; no admin prompt; works on locked-down corporate PCs)
-;   - Creates a Start Menu shortcut under "Lekha"
+;   - Creates a Start Menu shortcut under "Lekha AI"
 ;   - Sets HKCU\...\Run so the agent auto-starts when the user logs in
 ;   - Registers an uninstaller in Settings > Apps
 ;   - Offers a "Launch now" checkbox at the end of the install
@@ -16,10 +16,10 @@
 ; Inputs:
 ;   ..\target\release\lekha_tally.exe   (cargo build --release must have been run)
 
-#define MyAppName         "Lekha Tally Agent"
-#define MyAppVersion      "0.1.0"
+#define MyAppName         "Lekha AI Tally Connector"
+#define MyAppVersion      "0.2.0"
 #define MyAppPublisher    "Lekha AI"
-#define MyAppURL          "https://lekha.ai"
+#define MyAppURL          "https://lekhaai.app"
 #define MyAppExeName      "lekha_tally.exe"
 
 [Setup]
@@ -36,8 +36,8 @@ AppUpdatesURL={#MyAppURL}
 ; Per-user install — no admin prompt, no UAC, lands in user's AppData.
 ; (Same pattern as VS Code's per-user installer.)
 PrivilegesRequired=lowest
-DefaultDirName={userappdata}\Programs\Lekha\TallyAgent
-DefaultGroupName=Lekha
+DefaultDirName={userappdata}\Programs\LekhaAI\TallyConnector
+DefaultGroupName=Lekha AI
 DisableProgramGroupPage=yes
 DisableDirPage=auto
 
@@ -60,7 +60,7 @@ ShowLanguageDialog=no
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "autostart"; Description: "Start &Lekha Tally Agent automatically when I sign in"; \
+Name: "autostart"; Description: "Start &Lekha AI Tally Connector automatically when I sign in"; \
     GroupDescription: "Additional options:"
 
 [Files]
@@ -76,7 +76,7 @@ Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
 ; the "autostart" task checkbox ticked. uninsdeletevalue ensures uninstall
 ; removes the key.
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; \
-    ValueType: string; ValueName: "LekhaTallyAgent"; \
+    ValueType: string; ValueName: "LekhaTallyConnector"; \
     ValueData: """{app}\{#MyAppExeName}"""; \
     Flags: uninsdeletevalue; Tasks: autostart
 

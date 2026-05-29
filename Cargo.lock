@@ -1287,15 +1287,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09edd9e8b54e49e587e4f6295a7d29c3ea94d469cb40ab8ca70b288248a81db2"
 
 [[package]]
-name = "lekha_tally_installer"
-version = "0.1.0"
+name = "lekha_tally_connector"
+version = "0.2.0"
 dependencies = [
  "axum",
  "axum-server",
- "quick-xml",
  "rcgen",
  "rustls",
- "serde",
  "serde_json",
  "tao",
  "tokio",
@@ -1877,15 +1875,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8fd00f0bb2e90d81d1044c2b32617f68fcb9fa3bb7640c23e9c748e53fb30934"
 dependencies = [
  "unicode-ident",
-]
-
-[[package]]
-name = "quick-xml"
-version = "0.36.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f7649a7b4df05aed9ea7ec6f628c67c9953a43869b8bc50929569b2999d443fe"
-dependencies = [
- "memchr",
 ]
 
 [[package]]

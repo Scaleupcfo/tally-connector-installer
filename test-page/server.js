@@ -9,5 +9,5 @@ const port = process.env.PORT || 3000;
 app.use(express.static(__dirname));
 
 app.listen(port, () => {
-  console.log(`Lekha Tally test page on port ${port}`);
+  console.log(`Lekha AI Tally Connector test page on port ${port}`);
 });

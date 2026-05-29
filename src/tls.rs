@@ -16,12 +16,12 @@ const CERT_FILE: &str = "cert.pem";
 const KEY_FILE: &str = "key.pem";
 
 /// Per-user data directory for the agent.
-/// Windows: `%LOCALAPPDATA%\LekhaTallyInstaller\`
+/// Windows: `%LOCALAPPDATA%\LekhaAI\TallyConnector\`
 pub fn data_dir() -> PathBuf {
     let base = std::env::var("LOCALAPPDATA")
         .or_else(|_| std::env::var("APPDATA"))
         .unwrap_or_else(|_| ".".to_string());
-    PathBuf::from(base).join("LekhaTallyInstaller")
+    PathBuf::from(base).join("LekhaAI").join("TallyConnector")
 }
 
 /// Paths to the cert and key files on disk.

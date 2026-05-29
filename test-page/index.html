@@ -3,50 +3,70 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lekha Tally Agent — Test Page</title>
+  <title>Lekha AI — Tally Connector Test Page</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", monospace; max-width: 900px; margin: 20px auto; padding: 0 20px; color: #222; }
-    h1 { margin-bottom: 4px; }
-    .subtitle { color: #666; margin-top: 0; }
-    section { margin: 16px 0; padding: 14px; border: 1px solid #ddd; border-radius: 4px; }
-    section h2 { margin-top: 0; font-size: 16px; }
-    button { padding: 6px 14px; margin: 4px 4px 4px 0; cursor: pointer; font-size: 14px; }
-    input[type=text], input[type=date] { padding: 5px; font-family: monospace; margin: 2px; }
-    pre { background: #f4f4f4; padding: 12px; overflow: auto; max-height: 600px; border: 1px solid #ccc; font-size: 12px; }
-    .ok { color: #0a7a2f; font-weight: bold; }
-    .err { color: #b00020; font-weight: bold; }
-    .small { font-size: 12px; color: #666; }
-    a.download-btn { display: inline-block; padding: 8px 16px; background: #1a55a8; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold; }
+    :root {
+      --lime-300: #C5E84D;
+      --lime-500: #A8CC2A;
+      --ink-900: #101012;
+      --ink-700: #2C2C32;
+      --ink-500: #62626E;
+      --ink-200: #D4D4DC;
+      --paper-100: #F5F3EC;
+      --paper-200: #EDEADF;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 960px; margin: 0 auto; padding: 20px; color: var(--ink-900); background: var(--paper-100); }
+    .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+    .logo-mark { width: 36px; height: 36px; background: var(--lime-300); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-family: Georgia, "Times New Roman", serif; font-style: italic; font-size: 20px; color: var(--ink-900); font-weight: 400; }
+    .logo-text { font-family: Georgia, "Times New Roman", serif; font-style: italic; font-size: 24px; color: var(--ink-900); }
+    .subtitle { color: var(--ink-500); margin-top: 4px; margin-bottom: 20px; font-size: 14px; }
+    section { margin: 14px 0; padding: 16px; border: 1px solid var(--ink-200); border-radius: 8px; background: #fff; }
+    section h2 { margin-top: 0; font-size: 15px; color: var(--ink-700); }
+    button { padding: 7px 16px; margin: 4px 4px 4px 0; cursor: pointer; font-size: 13px; background: var(--ink-900); color: #fff; border: none; border-radius: 6px; }
+    button:hover { background: var(--ink-700); }
+    input[type=text] { padding: 7px 10px; font-family: monospace; font-size: 13px; margin: 2px; border: 1px solid var(--ink-200); border-radius: 6px; }
+    select { padding: 7px; font-size: 13px; border: 1px solid var(--ink-200); border-radius: 6px; }
+    textarea { width: 100%; min-height: 180px; font-family: monospace; font-size: 12px; padding: 10px; border: 1px solid var(--ink-200); border-radius: 6px; resize: vertical; }
+    pre { background: var(--paper-200); padding: 12px; overflow: auto; max-height: 500px; border: 1px solid var(--ink-200); border-radius: 6px; font-size: 12px; white-space: pre-wrap; word-wrap: break-word; }
+    .ok { color: #1FAB6F; font-weight: bold; }
+    .err { color: #C5462E; font-weight: bold; }
+    .small { font-size: 12px; color: var(--ink-500); }
+    a.download-btn { display: inline-block; padding: 9px 18px; background: var(--ink-900); color: var(--lime-300); text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; }
+    a.download-btn:hover { background: var(--ink-700); }
+    .template-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
   </style>
 </head>
 <body>
-  <h1>Lekha Tally Agent — Test Page</h1>
-  <p class="subtitle">Validates the local agent against your Tally. Once verified, this flow gets baked into Lekha AI.</p>
+  <div class="logo">
+    <div class="logo-mark">L</div>
+    <span class="logo-text">Lekha AI</span>
+  </div>
+  <p class="subtitle">Tally Connector — Test Page. Validates the local CORS proxy against your Tally Prime.</p>
 
   <section>
-    <h2>1 · Install the agent</h2>
-    <p>Download and double-click. Per-user install, no admin prompt. Tray icon appears (blue square, bottom-right).</p>
+    <h2>1 &middot; Install the connector</h2>
+    <p>Download and double-click. Per-user install, no admin prompt. Tray icon appears (lime "L" square, bottom-right).</p>
     <a class="download-btn"
        href="https://github.com/Scaleupcfo/tally-connector-installer/raw/main/dist/LekhaTallyAgentSetup.exe">
-      ↓ Download LekhaTallyAgentSetup.exe (3.84 MB)
+      &#8595; Download LekhaTallyAgentSetup.exe
     </a>
   </section>
 
   <section>
-    <h2>2 · Accept the agent's self-signed cert (one time)</h2>
-    <p>The agent uses HTTPS with a self-signed cert. Your browser will block calls to it until you accept the cert once:</p>
+    <h2>2 &middot; Accept the self-signed cert (one time)</h2>
+    <p>The connector uses HTTPS with a self-signed cert. Your browser blocks calls until you accept it once:</p>
     <ol>
       <li>Open <a href="https://127.0.0.1:9100/health" target="_blank">https://127.0.0.1:9100/health</a> in a new tab.</li>
-      <li>You'll see "Your connection is not private." Click <b>Advanced</b> → <b>Proceed to 127.0.0.1 (unsafe)</b>.</li>
+      <li>Click <b>Advanced</b> &rarr; <b>Proceed to 127.0.0.1 (unsafe)</b>.</li>
       <li>You should see <code>{"ok":true,...}</code>. Close the tab.</li>
     </ol>
-    <button onclick="checkHealth()">Now check connection from this page</button>
+    <button onclick="checkHealth()">Check connection from this page</button>
     <span id="healthStatus"></span>
   </section>
 
   <section>
-    <h2>3 · Paste pairing token</h2>
-    <p>Right-click tray icon → <b>Show pairing token</b> → Notepad opens with a UUID → copy and paste below.</p>
+    <h2>3 &middot; Paste pairing token</h2>
+    <p>Right-click tray icon &rarr; <b>Show pairing token</b> &rarr; Notepad opens with a UUID &rarr; copy and paste below.</p>
     <input type="text" id="token" size="50" placeholder="e.g. 54db5b26-324d-411d-af3e-08e11a7aec16">
     <button onclick="saveToken()">Save</button>
     <span id="tokenStatus"></span>
@@ -54,27 +74,24 @@
   </section>
 
   <section>
-    <h2>4 · List loaded companies</h2>
-    <p>Returns every company currently open in Tally Prime, with each one's books period.</p>
-    <button onclick="listCompanies()">GET /companies</button>
-  </section>
+    <h2>4 &middot; Send XML to Tally</h2>
+    <p>Select a template or write your own XML. The connector forwards it as-is to Tally on <code>localhost:9000</code>.</p>
 
-  <section>
-    <h2>5 · List ledgers</h2>
-    <p>Master ledger list (name, parent group, opening/closing balance, GSTIN) for one company.</p>
-    <input type="text" id="ledgerCompany" placeholder="company name (exact, case- and space-sensitive)" size="50">
-    <button onclick="listLedgers()">GET /ledgers</button>
-  </section>
-
-  <section>
-    <h2>6 · List vouchers</h2>
-    <p>Voucher headers + ledger entries in a date range. <b>Can take 30 seconds on big companies.</b></p>
-    <div>
-      <input type="text" id="voucherCompany" placeholder="company name" size="40"><br>
-      <label>From: <input type="date" id="voucherFrom"></label>
-      <label>To: <input type="date" id="voucherTo"></label>
-      <button onclick="listVouchers()">GET /vouchers</button>
+    <div class="template-row">
+      <label>Template:</label>
+      <select id="templateSelect" onchange="loadTemplate()">
+        <option value="">— custom XML —</option>
+        <option value="companies">List loaded companies</option>
+        <option value="ledgers">List ledgers (requires company name)</option>
+        <option value="vouchers">List vouchers (requires company + dates)</option>
+        <option value="create_voucher">Create a voucher (Import)</option>
+      </select>
     </div>
+
+    <textarea id="xmlBody" placeholder="Paste or type your Tally XML envelope here..."></textarea>
+    <br>
+    <button onclick="sendToTally()">POST /tally</button>
+    <span class="small" style="margin-left: 8px;">Sends raw XML, returns raw XML</span>
   </section>
 
   <section>
@@ -84,6 +101,123 @@
 
   <script>
     const BASE = 'https://127.0.0.1:9100';
+
+    const TEMPLATES = {
+      companies: `<ENVELOPE>
+  <HEADER>
+    <VERSION>1</VERSION>
+    <TALLYREQUEST>Export</TALLYREQUEST>
+    <TYPE>Collection</TYPE>
+    <ID>ListOfLoadedCompanies</ID>
+  </HEADER>
+  <BODY>
+    <DESC>
+      <STATICVARIABLES>
+        <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+      </STATICVARIABLES>
+      <TDL>
+        <TDLMESSAGE>
+          <COLLECTION NAME="ListOfLoadedCompanies" ISINITIALIZE="Yes">
+            <TYPE>Company</TYPE>
+            <FETCH>Name, StartingFrom, EndingAt</FETCH>
+          </COLLECTION>
+        </TDLMESSAGE>
+      </TDL>
+    </DESC>
+  </BODY>
+</ENVELOPE>`,
+
+      ledgers: `<ENVELOPE>
+  <HEADER>
+    <VERSION>1</VERSION>
+    <TALLYREQUEST>Export</TALLYREQUEST>
+    <TYPE>Collection</TYPE>
+    <ID>LedgerMasters</ID>
+  </HEADER>
+  <BODY>
+    <DESC>
+      <STATICVARIABLES>
+        <SVCURRENTCOMPANY>YOUR_COMPANY_NAME</SVCURRENTCOMPANY>
+        <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+      </STATICVARIABLES>
+      <TDL>
+        <TDLMESSAGE>
+          <COLLECTION NAME="LedgerMasters" ISINITIALIZE="Yes">
+            <TYPE>Ledger</TYPE>
+            <FETCH>NAME, PARENT, OPENINGBALANCE, CLOSINGBALANCE, GSTREGISTRATIONTYPE, PARTYGSTIN</FETCH>
+          </COLLECTION>
+        </TDLMESSAGE>
+      </TDL>
+    </DESC>
+  </BODY>
+</ENVELOPE>`,
+
+      vouchers: `<ENVELOPE>
+  <HEADER>
+    <VERSION>1</VERSION>
+    <TALLYREQUEST>Export</TALLYREQUEST>
+    <TYPE>Collection</TYPE>
+    <ID>RangeVouchers</ID>
+  </HEADER>
+  <BODY>
+    <DESC>
+      <STATICVARIABLES>
+        <SVCURRENTCOMPANY>YOUR_COMPANY_NAME</SVCURRENTCOMPANY>
+        <SVFROMDATE TYPE="Date">20240401</SVFROMDATE>
+        <SVTODATE TYPE="Date">20240430</SVTODATE>
+        <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+      </STATICVARIABLES>
+      <TDL>
+        <TDLMESSAGE>
+          <COLLECTION NAME="RangeVouchers" ISINITIALIZE="Yes">
+            <TYPE>Voucher</TYPE>
+            <FETCH>Date, VoucherTypeName, VoucherNumber, Narration, GUID,
+                   PartyLedgerName, AllLedgerEntries.List</FETCH>
+            <FILTER>InDateRange</FILTER>
+          </COLLECTION>
+          <SYSTEM TYPE="Formulae" NAME="InDateRange"><![CDATA[$Date >= $$Date:##SVFROMDATE AND $Date <= $$Date:##SVTODATE]]></SYSTEM>
+        </TDLMESSAGE>
+      </TDL>
+    </DESC>
+  </BODY>
+</ENVELOPE>`,
+
+      create_voucher: `<ENVELOPE>
+  <HEADER>
+    <VERSION>1</VERSION>
+    <TALLYREQUEST>Import</TALLYREQUEST>
+    <TYPE>Data</TYPE>
+    <ID>All Masters</ID>
+  </HEADER>
+  <BODY>
+    <DESC>
+      <STATICVARIABLES>
+        <SVCURRENTCOMPANY>YOUR_COMPANY_NAME</SVCURRENTCOMPANY>
+      </STATICVARIABLES>
+    </DESC>
+    <DATA>
+      <TALLYMESSAGE xmlns:UDF="TallyUDF">
+        <VOUCHER VCHTYPE="Sales" ACTION="Create">
+          <DATE>20260530</DATE>
+          <NARRATION>Test voucher created via Lekha AI</NARRATION>
+          <VOUCHERTYPENAME>Sales</VOUCHERTYPENAME>
+          <PARTYLEDGERNAME>Cash</PARTYLEDGERNAME>
+          <ALLLEDGERENTRIES.LIST>
+            <LEDGERNAME>Cash</LEDGERNAME>
+            <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
+            <AMOUNT>-1000.00</AMOUNT>
+          </ALLLEDGERENTRIES.LIST>
+          <ALLLEDGERENTRIES.LIST>
+            <LEDGERNAME>Sales Account</LEDGERNAME>
+            <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+            <AMOUNT>1000.00</AMOUNT>
+          </ALLLEDGERENTRIES.LIST>
+        </VOUCHER>
+      </TALLYMESSAGE>
+    </DATA>
+  </BODY>
+</ENVELOPE>`
+    };
 
     window.addEventListener('load', () => {
       const saved = localStorage.getItem('lekha_token');
@@ -107,6 +241,13 @@
       return document.getElementById('token').value.trim();
     }
 
+    function loadTemplate() {
+      const key = document.getElementById('templateSelect').value;
+      if (key && TEMPLATES[key]) {
+        document.getElementById('xmlBody').value = TEMPLATES[key];
+      }
+    }
+
     async function checkHealth() {
       const el = document.getElementById('healthStatus');
       el.innerHTML = ' checking...';
@@ -114,52 +255,55 @@
         const r = await fetch(`${BASE}/health`);
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const j = await r.json();
-        el.innerHTML = ` <span class="ok">connected · agent v${j.version}</span>`;
-        showOutput(j);
+        el.innerHTML = ` <span class="ok">connected &middot; v${j.version}</span>`;
+        showOutput(JSON.stringify(j, null, 2));
       } catch (e) {
-        el.innerHTML = ` <span class="err">failed: ${e.message}. Did you complete step 2 (accept the cert)?</span>`;
+        el.innerHTML = ` <span class="err">failed: ${e.message}. Did you complete step 2?</span>`;
       }
     }
 
-    async function callApi(path) {
+    async function sendToTally() {
       const token = getToken();
-      if (!token) { showError('paste pairing token first (step 3)'); return; }
-      showOutput({ status: 'requesting...', endpoint: path });
+      if (!token) { showError('Paste pairing token first (step 3)'); return; }
+
+      const xml = document.getElementById('xmlBody').value.trim();
+      if (!xml) { showError('Enter XML in the textarea'); return; }
+
+      showOutput('Sending to Tally...');
       try {
-        const r = await fetch(`${BASE}${path}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+        const r = await fetch(`${BASE}/tally`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'text/xml',
+          },
+          body: xml,
         });
-        const j = await r.json();
-        showOutput(j);
-        if (!r.ok) showError(`HTTP ${r.status}`);
+
+        const contentType = r.headers.get('content-type') || '';
+        if (contentType.includes('xml')) {
+          const text = await r.text();
+          showOutput(text);
+        } else {
+          const j = await r.json();
+          showOutput(JSON.stringify(j, null, 2));
+        }
+
+        if (!r.ok) {
+          showError(`HTTP ${r.status}`);
+        }
       } catch (e) {
-        showError(`network/cert error: ${e.message}. Did you accept the cert in step 2?`);
+        showError(`Network/cert error: ${e.message}. Did you accept the cert in step 2?`);
       }
     }
 
-    function listCompanies() { callApi('/companies'); }
-
-    function listLedgers() {
-      const c = document.getElementById('ledgerCompany').value.trim();
-      if (!c) { showError('enter company name'); return; }
-      callApi(`/ledgers?company=${encodeURIComponent(c)}`);
-    }
-
-    function listVouchers() {
-      const c = document.getElementById('voucherCompany').value.trim();
-      const f = document.getElementById('voucherFrom').value;
-      const t = document.getElementById('voucherTo').value;
-      if (!c || !f || !t) { showError('fill company + both dates'); return; }
-      callApi(`/vouchers?company=${encodeURIComponent(c)}&from=${f}&to=${t}`);
-    }
-
-    function showOutput(obj) {
-      document.getElementById('output').textContent = JSON.stringify(obj, null, 2);
+    function showOutput(text) {
+      document.getElementById('output').textContent = text;
     }
 
     function showError(msg) {
       const el = document.getElementById('output');
-      el.innerHTML = `<span class="err">${msg}</span>\n\n` + el.innerHTML;
+      el.innerHTML = `<span class="err">${msg}</span>\n\n` + el.textContent;
     }
   </script>
 </body>

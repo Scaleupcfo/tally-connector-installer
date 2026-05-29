@@ -1,8 +1,7 @@
-//! HTTP transport to Tally's XML/HTTP gateway on `localhost:9000`.
+//! HTTP transport to Tally's XML/HTTP gateway on localhost.
 //!
-//! Every submodule that talks to Tally (companies, vouchers, ledgers) goes
-//! through this one `post_xml()` function. That gives us a single place to
-//! add retries, timeouts, request logging, etc. later.
+//! The single `forward_xml()` function is the entire public API of the tally
+//! module. It forwards raw XML to Tally, sanitizes the response, and returns it.
 
 use std::net::{TcpStream, ToSocketAddrs};
 use std::time::Duration;
@@ -10,34 +9,30 @@ use std::time::Duration;
 use super::TallyError;
 use super::sanitize::sanitize_xml;
 
-pub const TALLY_HOST: &str = "localhost";
-pub const TALLY_PORT: u16 = 9000;
-const TIMEOUT_SECS: u64 = 900; // 15 min — voucher pulls on big companies are slow
+const TALLY_HOST: &str = "localhost";
+const TIMEOUT_SECS: u64 = 900; // 15 min — large export pulls are slow
 
-/// POST an XML envelope to Tally, sanitize the response, return the body.
-pub fn post_xml(envelope: &str) -> Result<String, TallyError> {
-    if !port_is_open() {
-        return Err(TallyError::PortClosed);
+/// Forward raw XML to Tally's HTTP gateway, sanitize the response, return it.
+pub fn forward_xml(xml_body: &str, port: u16) -> Result<String, TallyError> {
+    if !port_is_open(port) {
+        return Err(TallyError::PortClosed(port));
     }
-    let url = format!("http://{TALLY_HOST}:{TALLY_PORT}");
+    let url = format!("http://{TALLY_HOST}:{port}");
     let agent = ureq::AgentBuilder::new()
         .timeout(Duration::from_secs(TIMEOUT_SECS))
         .build();
     let raw = agent
         .post(&url)
         .set("Content-Type", "text/xml")
-        .send_string(envelope)
+        .send_string(xml_body)
         .map_err(|e| TallyError::HttpFailed(e.to_string()))?
         .into_string()
         .map_err(|e| TallyError::HttpFailed(e.to_string()))?;
     Ok(sanitize_xml(&raw))
 }
 
-/// TCP-level check: is anything listening on `localhost:9000`?
-/// We do this before each request so we can return a friendly "is Tally
-/// running?" error instead of ureq's generic "connection refused".
-pub fn port_is_open() -> bool {
-    let addr = format!("{TALLY_HOST}:{TALLY_PORT}");
+fn port_is_open(port: u16) -> bool {
+    let addr = format!("{TALLY_HOST}:{port}");
     let addrs = match addr.to_socket_addrs() {
         Ok(it) => it,
         Err(_) => return false,

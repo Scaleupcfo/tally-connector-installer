@@ -1,6 +1,6 @@
-# Lekha Tally Agent
+# Lekha AI Tally Connector
 
-Local Windows agent that bridges the Lekha AI web app to Tally Prime on a user's PC.
+Local Windows CORS proxy that bridges the Lekha AI web app to Tally Prime on a user's PC.
 
 ## The problem
 
@@ -8,18 +8,20 @@ Tally Prime is desktop accounting software. Its data sits inside Tally on a user
 
 ## The fix
 
-This installer drops a small Rust binary (`lekha_tally.exe`) into the user's `AppData`. It runs in the system tray and exposes an HTTPS server on `https://127.0.0.1:9100`. The Lekha AI web app calls *it*; it forwards to Tally; it returns clean JSON.
+This connector drops a small Rust binary (`lekha_tally.exe`) into the user's `AppData`. It runs in the system tray and exposes an HTTPS server on `https://127.0.0.1:9100`. The Lekha AI web app POSTs raw XML to it; it forwards to Tally; it returns Tally's XML response (sanitized of invalid chars).
+
+The connector is a **dumb pipe** — it never inspects, parses, or modifies the XML content. All Tally-specific logic (Export queries, Import vouchers, field selection) lives in the web app, not the installed binary.
 
 ```
    ┌────────────────────────────────┐         ┌─────────────────────────────┐
    │  Lekha AI website              │         │  User's Windows PC          │
-   │  (https://lekha.ai)            │         │  ┌───────────────────────┐  │
-   │                                │   HTTPS │  │ Lekha Tally Agent     │  │
-   │  browser JS:                   │ ──────▶ │  │ (this repo)           │  │
+   │  (https://lekhaai.app)         │         │  ┌───────────────────────┐  │
+   │                                │   HTTPS │  │ Lekha AI Tally        │  │
+   │  browser JS:                   │ ──────▶ │  │ Connector (this repo) │  │
    │  fetch('https://127.0.0.1:9100│  bearer │  │ axum on :9100, tray   │  │
-   │    /vouchers?company=...')    │  token  │  └──────────┬────────────┘  │
-   └────────────────────────────────┘         │             │ XML/HTTP      │
-                                              │             ▼               │
+   │    /tally', {method:'POST',   │  token  │  └──────────┬────────────┘  │
+   │    body: xmlEnvelope})        │         │             │ XML/HTTP      │
+   └────────────────────────────────┘         │             ▼               │
                                               │      ┌───────────────┐      │
                                               │      │ Tally Prime   │      │
                                               │      │ on :9000      │      │
@@ -29,14 +31,12 @@ This installer drops a small Rust binary (`lekha_tally.exe`) into the user's `Ap
 
 ## Endpoints
 
-| Method | Path | Auth | What it returns |
+| Method | Path | Auth | What it does |
 |---|---|---|---|
 | GET | `/health` | none | Liveness probe |
-| GET | `/companies` | Bearer token | All companies loaded in Tally, each with its books period |
-| GET | `/ledgers?company=<name>` | Bearer token | Master ledger list for one company |
-| GET | `/vouchers?company=<name>&from=<iso>&to=<iso>` | Bearer token | Vouchers for one company in a date range |
+| POST | `/tally` | Bearer token | Forwards XML body to Tally on :9000, returns XML response |
 
-All responses are JSON. Error shape: `{ "ok": false, "error": "..." }` with appropriate 4xx/5xx status.
+The `/tally` endpoint accepts any Tally XML — Export (read) or Import (write). Error responses are JSON: `{ "ok": false, "error": "..." }` with appropriate 4xx/5xx status.
 
 See [TESTING.md](TESTING.md) for installation and end-to-end testing on a PC with real Tally.
 
@@ -44,40 +44,38 @@ See [TESTING.md](TESTING.md) for installation and end-to-end testing on a PC wit
 
 | Layer | What it blocks |
 |---|---|
-| `localhost`-only bind | Nothing on the network can reach the agent |
+| `localhost`-only bind | Nothing on the network can reach the connector |
 | Self-signed TLS | Encrypts the localhost wire; browsers initially warn (cert trust is a future enhancement) |
-| CORS origin pin | Only `lekha.ai` (and dev origins) can read responses from a browser |
-| Bearer pairing token | Even on the right origin, a request without the token gets 401. Token is a UUID generated on first run, stored at `%LOCALAPPDATA%\LekhaTallyInstaller\token.txt` |
+| CORS origin pin | Only `lekhaai.app`, `lekha.ai` (and dev origins) can read responses from a browser |
+| Bearer pairing token | Even on the right origin, a request without the token gets 401. Token is a UUID generated on first run, stored at `%LOCALAPPDATA%\LekhaAI\TallyConnector\token.txt` |
 | Constant-time token compare | Resists timing attacks |
+| Content-Type validation | Only `text/xml` or `application/xml` accepted on `/tally` |
+| 10 MB body limit | Prevents oversized request abuse |
 
 ## Repo layout
 
 ```
 src/
   main.rs              — orchestration (spawn agent thread, run tray loop)
-  agent.rs             — the HTTPS axum server (TLS, CORS, auth, handlers)
-  tray.rs              — Windows tray icon + right-click menu
+  agent.rs             — the HTTPS axum server (TLS, CORS, auth, passthrough handler)
+  tray.rs              — Windows tray icon + right-click menu (Lekha AI branded)
   auth.rs              — pairing token generation + constant-time compare
   tls.rs               — self-signed cert generation
   tally.rs             — module root (re-exports)
   tally/
-    client.rs          — HTTP transport to Tally
+    client.rs          — HTTP transport to Tally (forward_xml)
     sanitize.rs        — strip Tally's malformed control chars
-    dates.rs           — YYYYMMDD <-> YYYY-MM-DD
-    companies.rs       — list loaded companies
-    ledgers.rs         — list master ledgers
-    vouchers.rs        — list vouchers in a date range
 
 installer/
   lekha_tally_agent.iss   — Inno Setup script
-installer_out/
-  LekhaTallyAgentSetup.exe  — the built installer (generated, not checked in)
+test-page/
+  index.html              — browser-based test UI with sample XML templates
 ```
 
 ## Build from source
 
 Prerequisites:
-- Rust toolchain (`rustup`, `cargo` ≥ 1.95)
+- Rust toolchain (`rustup`, `cargo` >= 1.95)
 - MSVC build tools (auto-prompted by rustup on Windows)
 
 Dev workflow:
@@ -86,7 +84,7 @@ Dev workflow:
 # Build + run as a console app, prints to stdout
 cargo run
 
-# Run the unit tests (the parser tests are real coverage)
+# Run the unit tests
 cargo test
 
 # Build the optimized release binary
@@ -104,10 +102,9 @@ cargo build --release
 # -> installer_out\LekhaTallyAgentSetup.exe
 ```
 
-The installer is ~4 MB. It installs per-user (no UAC prompt), creates a Start Menu shortcut, sets auto-start on login, and registers an uninstaller in Settings → Apps.
+The installer is ~4 MB. It installs per-user (no UAC prompt), creates a Start Menu shortcut under "Lekha AI", sets auto-start on login, and registers an uninstaller in Settings -> Apps.
 
 ## What's intentionally NOT done yet
 
 - **Cert trust**: the self-signed TLS cert isn't added to the Windows trust store. Browsers warn on first hit. A future installer can call `certutil -addstore Root` as a custom action (admin required).
-- **Voucher detail**: `Phase 6c` work to add bank allocations, inventory entries, dispatch details, GST tax-summary, batch allocations. The Python prototype at `Scaleupcfoai/tally-integration` has the parser logic for all of these — port when there's a real Lekha AI consumer asking for them.
-- **Auto-update**: the installer doesn't self-update. Users will need to re-download for new versions. Add a check-for-updates mechanism (or just let the Lekha AI website warn if `/health` returns a stale version).
+- **Auto-update**: the connector doesn't self-update. Users will need to re-download for new versions. Add a check-for-updates mechanism (or let the Lekha AI website warn if `/health` returns a stale version).

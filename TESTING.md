@@ -1,9 +1,9 @@
-# Testing Guide — Lekha Tally Agent
+# Testing Guide — Lekha AI Tally Connector
 
-> **Note:** this guide is for *validating* that the agent works end-to-end against a real Tally — not how end users will eventually use it. Once Lekha AI's website integrates the pairing + sync flow, real users only do step 1 (install) and step 2 (enable Tally's port); everything from step 3 onward happens inside the browser with one click.
+> **Note:** this guide is for *validating* that the connector works end-to-end against a real Tally — not how end users will eventually use it. Once Lekha AI's website integrates the pairing + sync flow, real users only do step 1 (install) and step 2 (enable Tally's port); everything from step 3 onward happens inside the browser automatically.
 
 For: anyone with a Windows PC running Tally Prime.
-Goal: install the agent, point a browser at it, see real Tally data come back as JSON.
+Goal: install the connector, POST raw XML to Tally via the CORS proxy, see real Tally data come back.
 
 You'll need:
 - A Windows PC (10 or 11, 64-bit)
@@ -14,17 +14,15 @@ You'll need:
 
 ## 1. Install
 
-1. In the repo, open the `dist/` folder. Download `LekhaTallyAgentSetup.exe` (3.84 MB).
+1. In the repo, open the `dist/` folder. Download `LekhaTallyAgentSetup.exe`.
 2. Double-click it.
-3. **No UAC prompt should appear** — this is a per-user install, lands in `%LOCALAPPDATA%\Programs\Lekha\TallyAgent`.
+3. **No UAC prompt should appear** — this is a per-user install, lands in `%LOCALAPPDATA%\Programs\LekhaAI\TallyConnector`.
 4. On the last screen, keep both boxes ticked:
-   - "Start Lekha Tally Agent automatically when I sign in"
-   - "Launch Lekha Tally Agent now"
+   - "Start Lekha AI Tally Connector automatically when I sign in"
+   - "Launch Lekha AI Tally Connector now"
 5. Click **Finish**.
 
-**Verify it's running:** look at the system tray (bottom-right of taskbar, click `^` to expand if hidden). You should see a **blue square icon** with tooltip *"Lekha Tally Agent — local bridge to Tally Prime"*. Right-click it; you should see menu items for **Show pairing token**, **Open data folder**, **Quit**.
-
-If you don't see the icon: open `%LOCALAPPDATA%\Programs\Lekha\TallyAgent\lekha_tally.exe` directly. If that fails too, paste the error.
+**Verify it's running:** look at the system tray (bottom-right of taskbar, click `^` to expand if hidden). You should see a **lime-green "L" icon** with tooltip *"Lekha AI — Tally Connector"*. Right-click it; you should see menu items for **Show pairing token**, **Open data folder**, **Quit**.
 
 ---
 
@@ -32,8 +30,8 @@ If you don't see the icon: open `%LOCALAPPDATA%\Programs\Lekha\TallyAgent\lekha_
 
 In Tally Prime:
 
-1. Press **F1** → **Settings**
-2. Go to **Connectivity** → **Client/Server configuration**
+1. Press **F1** -> **Settings**
+2. Go to **Connectivity** -> **Client/Server configuration**
 3. Set **TallyPrime is acting as** = **Both**
 4. Set **Port** = **9000**
 5. Save (Ctrl+A)
@@ -51,7 +49,7 @@ Should report `TcpTestSucceeded : True`. If False, the gateway isn't on — re-c
 
 ## 3. Grab your pairing token
 
-Right-click the tray icon → **Show pairing token**. Notepad opens with a UUID like:
+Right-click the tray icon -> **Show pairing token**. Notepad opens with a UUID like:
 
 ```
 54db5b26-324d-411d-af3e-08e11a7aec16
@@ -61,7 +59,7 @@ Copy it. This is the secret that proves "this browser session belongs to you" �
 
 ---
 
-## 4. Test each endpoint
+## 4. Test the endpoints
 
 Open PowerShell. Paste your token into the `$TOKEN` line, then run the commands one at a time.
 
@@ -77,43 +75,118 @@ $BASE = "https://127.0.0.1:9100"
 curl.exe -sk -w "`nStatus: %{http_code}`n" $BASE/health
 ```
 
-**Expected:** Status 200, body `{"ok":true,"service":"lekha_tally_installer","version":"0.1.0"}`.
+**Expected:** Status 200, body `{"ok":true,"service":"lekha_tally_proxy","version":"0.2.0"}`.
 
-### 4b. List loaded companies
+### 4b. List loaded companies (Export)
+
+Save this as `list_companies.xml`:
+
+```xml
+<ENVELOPE>
+  <HEADER>
+    <VERSION>1</VERSION>
+    <TALLYREQUEST>Export</TALLYREQUEST>
+    <TYPE>Collection</TYPE>
+    <ID>ListOfLoadedCompanies</ID>
+  </HEADER>
+  <BODY>
+    <DESC>
+      <STATICVARIABLES>
+        <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+      </STATICVARIABLES>
+      <TDL>
+        <TDLMESSAGE>
+          <COLLECTION NAME="ListOfLoadedCompanies" ISINITIALIZE="Yes">
+            <TYPE>Company</TYPE>
+            <FETCH>Name, StartingFrom, EndingAt</FETCH>
+          </COLLECTION>
+        </TDLMESSAGE>
+      </TDL>
+    </DESC>
+  </BODY>
+</ENVELOPE>
+```
 
 ```powershell
-curl.exe -sk -H $AUTH -w "`nStatus: %{http_code}`n" $BASE/companies
+curl.exe -sk -X POST -H $AUTH -H "Content-Type: text/xml" --data-binary "@list_companies.xml" -w "`nStatus: %{http_code}`n" $BASE/tally
 ```
 
-**Expected:** Status 200, body looks like:
-```json
-{"ok":true,"companies":[
-  {"name":"YOUR COMPANY","books_start":"2023-04-01","books_end":"2025-03-31"}
-]}
+**Expected:** Status 200, Tally XML response containing `<COMPANY>` elements.
+
+### 4c. List ledgers for a company (Export)
+
+Replace `YOUR_COMPANY_NAME` with the exact name from 4b's response:
+
+```xml
+<ENVELOPE>
+  <HEADER>
+    <VERSION>1</VERSION>
+    <TALLYREQUEST>Export</TALLYREQUEST>
+    <TYPE>Collection</TYPE>
+    <ID>LedgerMasters</ID>
+  </HEADER>
+  <BODY>
+    <DESC>
+      <STATICVARIABLES>
+        <SVCURRENTCOMPANY>YOUR_COMPANY_NAME</SVCURRENTCOMPANY>
+        <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+      </STATICVARIABLES>
+      <TDL>
+        <TDLMESSAGE>
+          <COLLECTION NAME="LedgerMasters" ISINITIALIZE="Yes">
+            <TYPE>Ledger</TYPE>
+            <FETCH>NAME, PARENT, OPENINGBALANCE, CLOSINGBALANCE</FETCH>
+          </COLLECTION>
+        </TDLMESSAGE>
+      </TDL>
+    </DESC>
+  </BODY>
+</ENVELOPE>
 ```
 
-If you see `"companies":[]` — Tally is reachable but no company is loaded. Open one in Tally and re-try.
+### 4d. Create a test voucher (Import)
 
-### 4c. List master ledgers for one company
+**Warning:** This writes data to Tally. Use a test company.
 
-Use the exact `name` from the previous response (case- and space-sensitive). URL-encode spaces as `%20` or `+`.
-
-```powershell
-$COMPANY = "YOUR%20COMPANY%20NAME"
-curl.exe -sk -H $AUTH -w "`nStatus: %{http_code}`n" "$BASE/ledgers?company=$COMPANY"
+```xml
+<ENVELOPE>
+  <HEADER>
+    <VERSION>1</VERSION>
+    <TALLYREQUEST>Import</TALLYREQUEST>
+    <TYPE>Data</TYPE>
+    <ID>All Masters</ID>
+  </HEADER>
+  <BODY>
+    <DESC>
+      <STATICVARIABLES>
+        <SVCURRENTCOMPANY>YOUR_COMPANY_NAME</SVCURRENTCOMPANY>
+      </STATICVARIABLES>
+    </DESC>
+    <DATA>
+      <TALLYMESSAGE xmlns:UDF="TallyUDF">
+        <VOUCHER VCHTYPE="Sales" ACTION="Create">
+          <DATE>20260530</DATE>
+          <NARRATION>Test voucher via Lekha AI</NARRATION>
+          <VOUCHERTYPENAME>Sales</VOUCHERTYPENAME>
+          <PARTYLEDGERNAME>Cash</PARTYLEDGERNAME>
+          <ALLLEDGERENTRIES.LIST>
+            <LEDGERNAME>Cash</LEDGERNAME>
+            <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
+            <AMOUNT>-1000.00</AMOUNT>
+          </ALLLEDGERENTRIES.LIST>
+          <ALLLEDGERENTRIES.LIST>
+            <LEDGERNAME>Sales Account</LEDGERNAME>
+            <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+            <AMOUNT>1000.00</AMOUNT>
+          </ALLLEDGERENTRIES.LIST>
+        </VOUCHER>
+      </TALLYMESSAGE>
+    </DATA>
+  </BODY>
+</ENVELOPE>
 ```
 
-**Expected:** Status 200, list of ledger objects with `name`, `parent_group`, `opening_balance`, `closing_balance`, `party_gstin`, etc.
-
-### 4d. List vouchers for a date range
-
-```powershell
-curl.exe -sk -H $AUTH -w "`nStatus: %{http_code}`n" "$BASE/vouchers?company=$COMPANY&from=2024-04-01&to=2025-03-31"
-```
-
-**Expected:** Status 200, list of voucher objects with `date`, `voucher_type`, `voucher_number`, `party_ledger_name`, `ledger_entries`, etc.
-
-Adjust the dates to fall inside your company's books period (visible from step 4b's response).
+**Expected:** Tally XML response with `<CREATED>1</CREATED>` indicating the voucher was created.
 
 ---
 
@@ -122,37 +195,28 @@ Adjust the dates to fall inside your company's books period (visible from step 4
 | Status | Body | What's wrong | Fix |
 |---|---|---|---|
 | 401 | `missing or invalid Authorization: Bearer <token>` | Token not sent, or wrong | Re-copy from tray menu |
+| 415 | `Content-Type must be text/xml or application/xml` | Wrong Content-Type header | Add `-H "Content-Type: text/xml"` |
+| 400 | `request body must not be empty` | No XML body in the POST | Add `--data-binary @file.xml` |
 | 503 | `Tally is not reachable on port 9000` | Tally isn't running, or port 9000 isn't enabled | See section 2 |
-| 502 | `Tally returned malformed XML: ...` | Tally responded with corrupt XML | Restart Tally and try again |
-| 400 | `invalid from date: ...` | Date isn't `YYYY-MM-DD` | Use ISO format only |
-| 400 | `company name is required` | `company` query param empty | Pass the exact name from `/companies` |
-| 200 | `"companies":[]` | Tally is up, but no company is open | Open a company in Tally |
+| 502 | `HTTP call to Tally failed: ...` | Tally returned an error or timed out | Check Tally is responsive |
 
 ---
 
-## 6. Test from a real browser (optional)
+## 6. Test from a real browser
 
-The Lekha AI website will call the agent from inside a browser tab. Until the cert is trusted system-wide (a future installer enhancement), the first browser hit will show a **"Your connection is not private"** warning.
+Use the test page: deploy `test-page/` or open it locally. It provides:
+- Health check
+- Pairing token entry
+- XML template dropdown (list companies, list ledgers, list vouchers, create voucher)
+- Raw XML textarea for custom queries
+- Response display
 
-To accept it for testing in Chrome/Edge:
-1. Open `https://127.0.0.1:9100/health` directly in the browser
-2. Click **Advanced** → **Proceed to 127.0.0.1 (unsafe)**
-3. After that, the cert is remembered for that browser; subsequent calls from `https://lekha.ai` to the agent will work without warning.
+Until the cert is trusted system-wide, the first browser hit will show a **"Your connection is not private"** warning. Accept it once at `https://127.0.0.1:9100/health`.
 
 ---
 
 ## 7. Uninstall
 
-Windows **Settings → Apps → Installed apps → Lekha Tally Agent → Uninstall**.
+Windows **Settings -> Apps -> Installed apps -> Lekha AI Tally Connector -> Uninstall**.
 
-This removes the binary, the auto-start entry, and the Start Menu shortcut. **It does NOT delete the per-user data folder** at `%LOCALAPPDATA%\LekhaTallyInstaller\` (cert, key, pairing token). Delete that manually if you want a truly clean wipe.
-
----
-
-## What to report back
-
-If you can complete steps 4a–4d with real data from your books, the agent works end-to-end. Please share:
-
-1. Output of step 4b (`/companies`) — confirms multi-company discovery.
-2. A trimmed sample of step 4d (`/vouchers`) — confirms voucher + ledger-entry parsing.
-3. Any voucher fields that **should be in our output but aren't** — current Phase 6b ships only headers + ledger entries. Bank allocations, inventory, GST tax-summary, and dispatch details are deliberately deferred to a future "Phase 6c" pending real-data review.
+This removes the binary, the auto-start entry, and the Start Menu shortcut. **It does NOT delete the per-user data folder** at `%LOCALAPPDATA%\LekhaAI\TallyConnector\` (cert, key, pairing token). Delete that manually if you want a truly clean wipe.

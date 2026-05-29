@@ -5,10 +5,10 @@
 //! Tauri uses for the same reason) and `tray-icon` for the icon + menu.
 //!
 //! Menu:
-//!   • header (disabled): "Lekha Tally Agent v0.1.0"
-//!   • Show pairing token   → opens token.txt in Notepad
-//!   • Open data folder     → opens %LOCALAPPDATA%\LekhaTallyInstaller in Explorer
-//!   • Quit                 → exits the whole process
+//!   - header (disabled): "Lekha AI Tally Connector v..."
+//!   - Show pairing token   -> opens token.txt in Notepad
+//!   - Open data folder     -> opens data dir in Explorer
+//!   - Quit                 -> exits the whole process
 
 use tao::event_loop::{ControlFlow, EventLoopBuilder};
 use tray_icon::{
@@ -18,20 +18,34 @@ use tray_icon::{
 
 use crate::tls;
 
-/// Build a 32x32 RGBA icon procedurally — solid blue with a darker border.
-/// Phase 8 (installer) can replace this with a real PNG of the Lekha logo.
+/// Build a 32x32 RGBA icon — Lekha AI branded "L" letterform.
+/// Lime-green background (#C5E84D) with dark ink (#101012) "L" shape.
 fn build_icon() -> tray_icon::Icon {
     const SIZE: u32 = 32;
-    const BLUE: [u8; 4] = [0x4A, 0x90, 0xE2, 0xFF];
-    const DARK: [u8; 4] = [0x1A, 0x55, 0xA8, 0xFF];
+    const LIME: [u8; 4] = [0xC5, 0xE8, 0x4D, 0xFF]; // #C5E84D
+    const INK: [u8; 4] = [0x10, 0x10, 0x12, 0xFF];   // #101012
 
-    let mut rgba = Vec::with_capacity((SIZE * SIZE * 4) as usize);
+    let mut rgba = vec![0u8; (SIZE * SIZE * 4) as usize];
+
+    // Fill background with lime
+    for pixel in rgba.chunks_exact_mut(4) {
+        pixel.copy_from_slice(&LIME);
+    }
+
+    // Draw "L" shape in ink:
+    //   vertical stroke: columns 8-12, rows 6-25
+    //   horizontal stroke: columns 8-23, rows 22-25
     for y in 0..SIZE {
         for x in 0..SIZE {
-            let on_edge = x == 0 || x == SIZE - 1 || y == 0 || y == SIZE - 1;
-            rgba.extend_from_slice(if on_edge { &DARK } else { &BLUE });
+            let in_vertical = x >= 8 && x < 13 && y >= 6 && y < 26;
+            let in_horizontal = x >= 8 && x < 24 && y >= 22 && y < 26;
+            if in_vertical || in_horizontal {
+                let idx = ((y * SIZE + x) * 4) as usize;
+                rgba[idx..idx + 4].copy_from_slice(&INK);
+            }
         }
     }
+
     tray_icon::Icon::from_rgba(rgba, SIZE, SIZE).expect("build icon")
 }
 
@@ -42,7 +56,7 @@ pub fn run_event_loop() -> ! {
 
     // ----- Menu items -----
     let header = MenuItem::new(
-        format!("Lekha Tally Agent v{}", env!("CARGO_PKG_VERSION")),
+        format!("Lekha AI Tally Connector v{}", env!("CARGO_PKG_VERSION")),
         false, // disabled — informational only
         None,
     );
@@ -63,7 +77,7 @@ pub fn run_event_loop() -> ! {
 
     // ----- Build the tray icon (must outlive the event loop -> hold a ref) -----
     let _tray = TrayIconBuilder::new()
-        .with_tooltip("Lekha Tally Agent — local bridge to Tally Prime")
+        .with_tooltip("Lekha AI — Tally Connector")
         .with_icon(build_icon())
         .with_menu(Box::new(menu))
         .build()
@@ -87,7 +101,6 @@ pub fn run_event_loop() -> ! {
                 let path = tls::data_dir();
                 let _ = std::process::Command::new("explorer").arg(&path).spawn();
             } else if ev.id == id_show_token {
-                // Open token.txt in Notepad — simplest "show + allow copy" UI.
                 let token_path = tls::data_dir().join("token.txt");
                 let _ = std::process::Command::new("notepad").arg(&token_path).spawn();
             }

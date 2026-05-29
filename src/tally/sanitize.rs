@@ -73,15 +73,6 @@ pub fn sanitize_xml(input: &str) -> String {
     out
 }
 
-/// XML-escape a string for safe interpolation into an element body or attribute.
-pub fn xml_escape(s: &str) -> String {
-    s.replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-        .replace('\'', "&apos;")
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -112,12 +103,5 @@ mod tests {
     fn keeps_hex_ref_to_valid_codepoint() {
         // &#x41; is 'A' — keep as-is.
         assert_eq!(sanitize_xml("&#x41;"), "&#x41;");
-    }
-
-    #[test]
-    fn xml_escape_basics() {
-        assert_eq!(xml_escape("A & B"), "A &amp; B");
-        assert_eq!(xml_escape("<x>"), "&lt;x&gt;");
-        assert_eq!(xml_escape(r#"He said "hi""#), "He said &quot;hi&quot;");
     }
 }
