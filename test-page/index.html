@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lekha Tally Agent — Test Page</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", monospace; max-width: 900px; margin: 20px auto; padding: 0 20px; color: #222; }
+    h1 { margin-bottom: 4px; }
+    .subtitle { color: #666; margin-top: 0; }
+    section { margin: 16px 0; padding: 14px; border: 1px solid #ddd; border-radius: 4px; }
+    section h2 { margin-top: 0; font-size: 16px; }
+    button { padding: 6px 14px; margin: 4px 4px 4px 0; cursor: pointer; font-size: 14px; }
+    input[type=text], input[type=date] { padding: 5px; font-family: monospace; margin: 2px; }
+    pre { background: #f4f4f4; padding: 12px; overflow: auto; max-height: 600px; border: 1px solid #ccc; font-size: 12px; }
+    .ok { color: #0a7a2f; font-weight: bold; }
+    .err { color: #b00020; font-weight: bold; }
+    .small { font-size: 12px; color: #666; }
+    a.download-btn { display: inline-block; padding: 8px 16px; background: #1a55a8; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Lekha Tally Agent — Test Page</h1>
+  <p class="subtitle">Validates the local agent against your Tally. Once verified, this flow gets baked into Lekha AI.</p>
+
+  <section>
+    <h2>1 · Install the agent</h2>
+    <p>Download and double-click. Per-user install, no admin prompt. Tray icon appears (blue square, bottom-right).</p>
+    <a class="download-btn"
+       href="https://github.com/Scaleupcfo/tally-connector-installer/raw/main/dist/LekhaTallyAgentSetup.exe">
+      ↓ Download LekhaTallyAgentSetup.exe (3.84 MB)
+    </a>
+  </section>
+
+  <section>
+    <h2>2 · Accept the agent's self-signed cert (one time)</h2>
+    <p>The agent uses HTTPS with a self-signed cert. Your browser will block calls to it until you accept the cert once:</p>
+    <ol>
+      <li>Open <a href="https://127.0.0.1:9100/health" target="_blank">https://127.0.0.1:9100/health</a> in a new tab.</li>
+      <li>You'll see "Your connection is not private." Click <b>Advanced</b> → <b>Proceed to 127.0.0.1 (unsafe)</b>.</li>
+      <li>You should see <code>{"ok":true,...}</code>. Close the tab.</li>
+    </ol>
+    <button onclick="checkHealth()">Now check connection from this page</button>
+    <span id="healthStatus"></span>
+  </section>
+
+  <section>
+    <h2>3 · Paste pairing token</h2>
+    <p>Right-click tray icon → <b>Show pairing token</b> → Notepad opens with a UUID → copy and paste below.</p>
+    <input type="text" id="token" size="50" placeholder="e.g. 54db5b26-324d-411d-af3e-08e11a7aec16">
+    <button onclick="saveToken()">Save</button>
+    <span id="tokenStatus"></span>
+    <p class="small">Stored only in your browser's localStorage.</p>
+  </section>
+
+  <section>
+    <h2>4 · List loaded companies</h2>
+    <p>Returns every company currently open in Tally Prime, with each one's books period.</p>
+    <button onclick="listCompanies()">GET /companies</button>
+  </section>
+
+  <section>
+    <h2>5 · List ledgers</h2>
+    <p>Master ledger list (name, parent group, opening/closing balance, GSTIN) for one company.</p>
+    <input type="text" id="ledgerCompany" placeholder="company name (exact, case- and space-sensitive)" size="50">
+    <button onclick="listLedgers()">GET /ledgers</button>
+  </section>
+
+  <section>
+    <h2>6 · List vouchers</h2>
+    <p>Voucher headers + ledger entries in a date range. <b>Can take 30 seconds on big companies.</b></p>
+    <div>
+      <input type="text" id="voucherCompany" placeholder="company name" size="40"><br>
+      <label>From: <input type="date" id="voucherFrom"></label>
+      <label>To: <input type="date" id="voucherTo"></label>
+      <button onclick="listVouchers()">GET /vouchers</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Response</h2>
+    <pre id="output">(nothing yet — run a test above)</pre>
+  </section>
+
+  <script>
+    const BASE = 'https://127.0.0.1:9100';
+
+    window.addEventListener('load', () => {
+      const saved = localStorage.getItem('lekha_token');
+      if (saved) {
+        document.getElementById('token').value = saved;
+        document.getElementById('tokenStatus').innerHTML = ' <span class="ok">loaded from browser storage</span>';
+      }
+    });
+
+    function saveToken() {
+      const t = document.getElementById('token').value.trim();
+      if (!t) {
+        document.getElementById('tokenStatus').innerHTML = ' <span class="err">empty</span>';
+        return;
+      }
+      localStorage.setItem('lekha_token', t);
+      document.getElementById('tokenStatus').innerHTML = ' <span class="ok">saved</span>';
+    }
+
+    function getToken() {
+      return document.getElementById('token').value.trim();
+    }
+
+    async function checkHealth() {
+      const el = document.getElementById('healthStatus');
+      el.innerHTML = ' checking...';
+      try {
+        const r = await fetch(`${BASE}/health`);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const j = await r.json();
+        el.innerHTML = ` <span class="ok">connected · agent v${j.version}</span>`;
+        showOutput(j);
+      } catch (e) {
+        el.innerHTML = ` <span class="err">failed: ${e.message}. Did you complete step 2 (accept the cert)?</span>`;
+      }
+    }
+
+    async function callApi(path) {
+      const token = getToken();
+      if (!token) { showError('paste pairing token first (step 3)'); return; }
+      showOutput({ status: 'requesting...', endpoint: path });
+      try {
+        const r = await fetch(`${BASE}${path}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const j = await r.json();
+        showOutput(j);
+        if (!r.ok) showError(`HTTP ${r.status}`);
+      } catch (e) {
+        showError(`network/cert error: ${e.message}. Did you accept the cert in step 2?`);
+      }
+    }
+
+    function listCompanies() { callApi('/companies'); }
+
+    function listLedgers() {
+      const c = document.getElementById('ledgerCompany').value.trim();
+      if (!c) { showError('enter company name'); return; }
+      callApi(`/ledgers?company=${encodeURIComponent(c)}`);
+    }
+
+    function listVouchers() {
+      const c = document.getElementById('voucherCompany').value.trim();
+      const f = document.getElementById('voucherFrom').value;
+      const t = document.getElementById('voucherTo').value;
+      if (!c || !f || !t) { showError('fill company + both dates'); return; }
+      callApi(`/vouchers?company=${encodeURIComponent(c)}&from=${f}&to=${t}`);
+    }
+
+    function showOutput(obj) {
+      document.getElementById('output').textContent = JSON.stringify(obj, null, 2);
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('output');
+      el.innerHTML = `<span class="err">${msg}</span>\n\n` + el.innerHTML;
+    }
+  </script>
+</body>
+</html>

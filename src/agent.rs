@@ -20,7 +20,7 @@ use axum::{
 use axum_server::tls_rustls::RustlsConfig;
 use serde::Deserialize;
 use serde_json::{Value, json};
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{AllowOrigin, CorsLayer};
 
 use crate::{auth, tally, tls};
 
@@ -181,12 +181,16 @@ async fn run(pairing_token: String) {
         pairing_token: Arc::new(pairing_token),
     };
 
-    let origins: Vec<_> = ALLOWED_ORIGINS
-        .iter()
-        .map(|s| s.parse().expect("static origin is valid"))
-        .collect();
+    // CORS: hardcoded list (production/dev) PLUS any Railway-hosted test page.
+    // Predicate lets us accept `*.up.railway.app` without knowing the exact
+    // subdomain at compile time — Railway assigns it post-deploy.
     let cors = CorsLayer::new()
-        .allow_origin(origins)
+        .allow_origin(AllowOrigin::predicate(|origin, _parts| {
+            let Ok(s) = origin.to_str() else { return false };
+            ALLOWED_ORIGINS.iter().any(|&allowed| allowed == s)
+                || s.ends_with(".up.railway.app")
+                || s.ends_with(".railway.app")
+        }))
         .allow_methods([Method::GET])
         .allow_headers([AUTHORIZATION, CONTENT_TYPE]);
 

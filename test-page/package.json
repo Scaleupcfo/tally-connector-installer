@@ -1,0 +1,15 @@
+{
+  "name": "lekha-tally-test-page",
+  "version": "0.1.0",
+  "description": "Standalone test page for the Lekha Tally Agent. Deploy on Railway to validate the agent before integrating into Lekha AI.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
