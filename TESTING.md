@@ -14,7 +14,7 @@ You'll need:
 
 ## 1. Install
 
-1. Get `LekhaTallyAgentSetup.exe` (from the repo's releases page, or wherever the build was shared).
+1. In the repo, open the `dist/` folder. Download `LekhaTallyAgentSetup.exe` (3.84 MB).
 2. Double-click it.
 3. **No UAC prompt should appear** — this is a per-user install, lands in `%LOCALAPPDATA%\Programs\Lekha\TallyAgent`.
 4. On the last screen, keep both boxes ticked:
